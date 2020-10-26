@@ -14,9 +14,13 @@ import fs from "mz/fs";
  *
  */
 const DIST_DIRECTORY = "./dist";
-export const PROGRAM_PATHS: Array<string> = fs
+export const PROGRAM_PATHS: Record<string, string> = fs
   .readdirSync(DIST_DIRECTORY)
-  .map((fileName) => `${DIST_DIRECTORY}/${fileName}`);
+  .reduce((acc, fileName) => {
+    const path = `${DIST_DIRECTORY}/${fileName}`;
+    acc[fileName] = path;
+    return acc;
+  }, {} as Record<string, string>);
 export const LOCALNET_URL: string = "http://localhost:8899";
 
 export const sleep = (ms: number): Promise<void> => {
@@ -62,13 +66,10 @@ export const newAccountWithLamports = async (
 
 export default class TestHelper {
   connection!: Connection;
-  accounts: Array<Account>;
-  programIds: Array<PublicKey>;
+  accounts: Array<Account> = [];
+  programs: Record<string, PublicKey> = {};
 
   constructor() {
-    this.accounts = [];
-    this.programIds = [];
-
     this.establishConnection();
   }
   /**
@@ -101,7 +102,8 @@ export default class TestHelper {
    */
   async loadProgram(
     pathToProgram: string,
-    payerAccount: Account
+    payerAccount: Account,
+    name: string
   ): Promise<void> {
     console.log(`Loading program at ${pathToProgram}...`);
     const data = await fs.readFile(pathToProgram);
@@ -114,7 +116,7 @@ export default class TestHelper {
       BPF_LOADER_PROGRAM_ID
     );
     const programId = programAccount.publicKey;
-    this.programIds.push(programId);
+    this.programs[name] = programId;
     console.log("Program loaded to account", programId.toBase58());
   }
 
@@ -128,20 +130,13 @@ export default class TestHelper {
       noAirdropCheck: true,
     });
     await Promise.all(
-      PROGRAM_PATHS.map(async (program) => {
-        await this.loadProgram(program, payerAccount);
+      Object.keys(PROGRAM_PATHS).map(async (programName) => {
+        await this.loadProgram(
+          PROGRAM_PATHS[programName],
+          payerAccount,
+          programName
+        );
       })
     );
-  }
-
-  setup() {
-    // Establish connection to the cluster
-    const res = new Connection(LOCALNET_URL, "recent");
-
-    // Set up an array of accounts;
-    // await establishPayer();
-
-    // // Load the program if not already loaded
-    // await loadProgram();
   }
 }

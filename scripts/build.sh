@@ -4,7 +4,8 @@ cd "$(dirname "$0")"
 
 sdkDir=../node_modules/@solana/web3.js/bpf-sdk
 profile=bpfel-unknown-unknown/release
-
+# clean dist 
+rm -rf ../dist
 mkdir -p ../dist
 
 for dir in ../programs/*/

@@ -1,17 +1,11 @@
 import * as semver from "semver";
-import { PublicKey } from "@solana/web3.js";
 
-import TestHelper from "./testHelper";
-import { LOCALNET_URL } from "./testHelper";
+import TestHelper, { LOCALNET_URL, PROGRAM_PATHS } from "./testHelper";
 
 describe("With established connection", () => {
   let testHelper = new TestHelper();
   beforeAll(async () => {
     await testHelper.establishConnection(LOCALNET_URL);
-  });
-
-  afterAll(() => {
-    // testHelper.connection._rpcWebSocket.close();
   });
 
   test("A valid connection should be established", async () => {
@@ -32,9 +26,11 @@ describe("With established connection", () => {
     test("it should deploy the hello world contract to the chain", async () => {
       jest.setTimeout(30000);
       await testHelper.deployContracts();
-      expect(testHelper.programIds.length > 0).toBe(true);
+      expect(Object.keys(testHelper.programs).length).toEqual(
+        Object.keys(PROGRAM_PATHS).length
+      );
       await Promise.all(
-        testHelper.programIds.map(async (programId) => {
+        Object.values(testHelper.programs).map(async (programId) => {
           // check if the first program is actually deployed
           let accountInfo;
           try {
